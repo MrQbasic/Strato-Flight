@@ -2,8 +2,8 @@
 #include "HT_st7735.h"
 
 
-#include "windows/tempSensor.hpp"
-
+#include "windows/air-Data.hpp"
+#include "windows/light-Data.hpp"
 
 HT_st7735 st7735;
 
@@ -14,12 +14,22 @@ void Display::init(){
 
 
 using windowRenderFunc = void(*)(HT_st7735);
-windowRenderFunc renderFunction[] = {render_temp};
+windowRenderFunc renderFunction[] = {render_airData, render_LightData};
 
+int pageCount = sizeof(renderFunction)/sizeof(renderFunction[0]);
 
-int pageIndex = 0;
+int pageIndex = -1;
 
 void Display::render(bool nextPage){
+    if(nextPage){
+        pageIndex ++;
+        st7735.st7735_fill_screen(ST7735_BLACK);
+        if(pageIndex >= pageCount){
+            pageIndex = 0;
+        }
+        st7735.st7735_write_str(160-7*4, 0, (String)(pageIndex + 1 )+ "/" + (String)(pageCount), Font_7x10, ST7735_WHITE);
+    }
+
     renderFunction[pageIndex](st7735);
 }
 

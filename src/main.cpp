@@ -3,21 +3,34 @@
 
 #include <Wire.h>
 
+#define PIN_USR 0
+
+bool shouldSwitchPage = true;
+void IRAM_ATTR switchWindows(){
+    shouldSwitchPage = true;
+}
+
 
 void setup(){
     Serial.begin(115200);
-
     Display::init();
-    Sensors::init();
 
     Wire.begin(45, 46);
+
+    //enable interrupt
+    pinMode(PIN_USR, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(PIN_USR), switchWindows, FALLING);
+
+    Sensors::init();
+
 }
 
 
 void loop(){
     Sensors::update();
 
-    Display::render(false);
+    Display::render(shouldSwitchPage);
+    shouldSwitchPage = false;
 }
 
 
