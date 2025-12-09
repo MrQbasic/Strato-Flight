@@ -4,6 +4,7 @@
 
 #include "windows/air-Data.hpp"
 #include "windows/light-Data.hpp"
+#include "windows/gps-Data.hpp"
 
 HT_st7735 st7735;
 
@@ -14,7 +15,7 @@ void Display::init(){
 
 
 using windowRenderFunc = void(*)(HT_st7735);
-windowRenderFunc renderFunction[] = {render_airData, render_LightData};
+windowRenderFunc renderFunction[] = {render_gpsData_1, render_gpsData_2, render_airData, render_LightData};
 
 int pageCount = sizeof(renderFunction)/sizeof(renderFunction[0]);
 

@@ -1,10 +1,13 @@
 #include "display.hpp"
 #include "sensors.hpp"
+#include "gps.hpp"
 
 #include <Wire.h>
 
 #define PIN_USR 0
+#define PIN_VGNSS_CTRL 3
 
+//screen switching function
 bool shouldSwitchPage = true;
 void IRAM_ATTR switchWindows(){
     shouldSwitchPage = true;
@@ -23,10 +26,17 @@ void setup(){
 
     Sensors::init();
 
+    //init GPS
+    pinMode(PIN_VGNSS_CTRL, OUTPUT);
+    digitalWrite(PIN_VGNSS_CTRL, HIGH);
+    Serial1.begin(115200, SERIAL_8N1, 33, 34);
+
 }
 
 
 void loop(){
+    GPS::updateData();
+
     Sensors::update();
 
     Display::render(shouldSwitchPage);
