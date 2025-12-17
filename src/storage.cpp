@@ -75,11 +75,10 @@ void writeCSVLine(fs::SDFS &sd){
             Display::showMessage("SD ERROR: WRITE FAIL", Display::MESSAGE_ERROR);
         }
         DisplayError_data = false;
-        status_sd = Display::STATUS_BAD;
+        Storage::init(); //try to re-init SD
         return;
     }
     DisplayError_data = true;
-    status_sd = Display::STATUS_OK;
     file_data.println(line);
     file_data.flush();
 }
@@ -90,7 +89,7 @@ namespace Storage {
         if(!setupOK) return;
         if(!SD.exists(path_logFile)){
             Display::showMessage("SD ERROR: WRITE FAIL", Display::MESSAGE_ERROR);
-            status_sd = Display::STATUS_BAD;
+            Storage::init(); //try to re-init SD
             DisplayError_log = false;
             return;
         }
@@ -104,43 +103,57 @@ namespace Storage {
         *usedMB = SD.usedBytes() / (1024 * 1024);
     }
 
-
+    bool firstInit = true;
     void init(){
-        Display::addStatusBar(&status_sd, "SD");
+        //same routine is used for re-init after failure
+        if(firstInit){
+            Display::addStatusBar(&status_sd, "SD");
+        }
     
         spiSD.begin(PIN_SD_SCK, PIN_SD_MISO, PIN_SD_MOSI, PIN_SD_CS);
         if(!SD.begin(PIN_SD_CS, spiSD)){
-            Display::showMessage("SPI ERROR: SD CARD", Display::MESSAGE_ERROR);
-            delay(1500);
             status_sd = Display::STATUS_BAD;
+            if(firstInit){
+                Display::showMessage("SPI ERROR: SD CARD", Display::MESSAGE_ERROR);
+                delay(1500);
+            }
             return;
         }
 
         //autogen file paths
-        sd_getValidPath(SD);
-
-        //create the file and check if that worked
-        file_data = SD.open(path_dataFile, FILE_APPEND);
-        file_log  = SD.open(path_logFile, FILE_APPEND);
-        if(!file_data || !file_log){
-            Display::showMessage("SD ERROR: CREATE FILE", Display::MESSAGE_ERROR);
-            status_sd = Display::STATUS_BAD;
-            delay(2000);
+        if(firstInit){
+            sd_getValidPath(SD);
+            //create the file and check if that worked
+            file_data = SD.open(path_dataFile, FILE_APPEND);
+            file_log  = SD.open(path_logFile, FILE_APPEND);
+            if(!file_data || !file_log){
+                Display::showMessage("SD ERROR: CREATE FILE", Display::MESSAGE_ERROR);
+                status_sd = Display::STATUS_BAD;
+                delay(2000);
+            }
+            file_data.close();
+            file_log.close();
         }
-        file_data.close();
-        file_log.close();
+
+        
         //now open them for real
         file_data = SD.open(path_dataFile, FILE_APPEND);
         file_log  = SD.open(path_logFile, FILE_APPEND);
         if(!file_data || !file_log){
-            Display::showMessage("SD ERROR: OPEN FILE", Display::MESSAGE_ERROR);
             status_sd = Display::STATUS_BAD;
-            delay(2000);
+            if(firstInit){
+                Display::showMessage("SD ERROR: OPEN FILE", Display::MESSAGE_ERROR);
+                delay(2000);
+            }
+            return;
         }
 
         //everything went well
         status_sd = Display::STATUS_OK;
         setupOK = true;
+        if(firstInit){
+            firstInit = false;
+        }
     }
 
 
