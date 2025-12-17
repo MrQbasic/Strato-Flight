@@ -1,3 +1,4 @@
+#pragma once
 #include "Arduino.h"
 
 namespace Display{
@@ -15,9 +16,9 @@ namespace Display{
         STATUS_OK      //GREEN
     };
 
-    void addStatusBar(int* status, String text);
-
-
+    //add a status bar which needs to be rendered
+    //returns true if added successfully
+    void addStatusBar(enum StatusBarLevel *status, String text);
 
     //this shows the level of any direct screen message
     enum MessageLevel{
@@ -26,6 +27,6 @@ namespace Display{
         MESSAGE_ERROR
     };
 
-    //shows an error message
-    void showMessage(String string, MessageLevel level=MESSAGE_ERROR);
+    //shows an error message and save it to log
+    void showMessage(String string, MessageLevel level=MESSAGE_ERROR, bool hang=false, bool saveLog=true);
 }

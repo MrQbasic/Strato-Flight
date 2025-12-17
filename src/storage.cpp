@@ -1,0 +1,153 @@
+#include <SPI.h>
+#include <SD.h>
+#include <Arduino.h>
+
+#include "storage.hpp"
+#include "gps.hpp"
+#include "sensors.hpp"
+#include "display.hpp"
+
+
+#define PIN_SD_CS    5
+#define PIN_SD_MOSI 10
+#define PIN_SD_MISO 11
+#define PIN_SD_SCK   9
+
+SPIClass spiSD(HSPI);
+
+bool setupOK = false;
+
+enum Display::StatusBarLevel status_sd = Display::STATUS_HIDE;
+
+//helper Functions for FS access
+
+#define FILE_DATA_PREFIX "/FLIGHT_DATA_"
+#define FILE_LOG_PREFIX  "/LOG_"
+
+String path_logFile = "---";
+File file_log;
+String path_dataFile = "---";
+File file_data;
+
+void sd_getValidPath(fs::SDFS &sd){
+    int index = 0;
+    while(true){
+        String filename = FILE_DATA_PREFIX + (String)index + ".CSV";
+        if(!sd.exists(filename)){
+            path_dataFile = filename;
+            path_logFile  = FILE_LOG_PREFIX + (String)index + ".CSV";
+            return;
+        }
+        index ++;
+        if(index > 9999){
+            //no available index found (should never happen just in case something went wrong)
+            Display::showMessage("SD ERROR: NO FILE INDEX", Display::MESSAGE_ERROR);
+            while (1);
+        }
+    }
+}
+
+bool DisplayError_data = true;
+void writeCSVLine(fs::SDFS &sd){
+    String line;
+
+    //timestamp
+    line += (String) millis() + ",";
+    //GPS
+    line +=  String(GPS::GPS.location.lat(), 7) + ",";
+    line +=  String(GPS::GPS.location.lng(), 7) + ",";
+    line += (String) GPS::GPS.altitude.meters() + ",";
+    line += (String) GPS::GPS.speed.kmph() + ",";
+    line += (String) GPS::GPS.date.value() + ",";
+    line += (String) GPS::GPS.time.value() + ",";
+    line += (String) GPS::GPS.satellites.value() + ",";
+    line += (String) GPS::GPS.hdop.hdop() + ",";
+    //Sensors
+    line += (String) Sensors::data.temp_ext_C + ",";
+    line += (String) Sensors::data.temp_ext_C_2 + ",";
+    line += (String) Sensors::data.pressure_ext + ",";
+    line += (String) Sensors::data.humidity_ext + ",";
+    line += (String) Sensors::data.uv_index;
+
+    //write all data
+    if(!SD.exists(path_dataFile)){
+        if(DisplayError_data){
+            Display::showMessage("SD ERROR: WRITE FAIL", Display::MESSAGE_ERROR);
+        }
+        DisplayError_data = false;
+        status_sd = Display::STATUS_BAD;
+        return;
+    }
+    DisplayError_data = true;
+    status_sd = Display::STATUS_OK;
+    file_data.println(line);
+    file_data.flush();
+}
+namespace Storage {
+
+    bool DisplayError_log = true;
+    void saveLogLine(String line){
+        if(!setupOK) return;
+        if(!SD.exists(path_logFile)){
+            Display::showMessage("SD ERROR: WRITE FAIL", Display::MESSAGE_ERROR);
+            status_sd = Display::STATUS_BAD;
+            DisplayError_log = false;
+            return;
+        }
+        status_sd = Display::STATUS_OK;
+        file_log.println(line);
+        file_log.flush();
+    }
+
+    void getSpaceInfo(int *totalMB, int *usedMB){
+        *totalMB = SD.cardSize() / (1024 * 1024);
+        *usedMB = SD.usedBytes() / (1024 * 1024);
+    }
+
+
+    void init(){
+        Display::addStatusBar(&status_sd, "SD");
+    
+        spiSD.begin(PIN_SD_SCK, PIN_SD_MISO, PIN_SD_MOSI, PIN_SD_CS);
+        if(!SD.begin(PIN_SD_CS, spiSD)){
+            Display::showMessage("SPI ERROR: SD CARD", Display::MESSAGE_ERROR);
+            delay(1500);
+            status_sd = Display::STATUS_BAD;
+            return;
+        }
+
+        //autogen file paths
+        sd_getValidPath(SD);
+
+        //create the file and check if that worked
+        file_data = SD.open(path_dataFile, FILE_APPEND);
+        file_log  = SD.open(path_logFile, FILE_APPEND);
+        if(!file_data || !file_log){
+            Display::showMessage("SD ERROR: CREATE FILE", Display::MESSAGE_ERROR);
+            status_sd = Display::STATUS_BAD;
+            delay(2000);
+        }
+        file_data.close();
+        file_log.close();
+        //now open them for real
+        file_data = SD.open(path_dataFile, FILE_APPEND);
+        file_log  = SD.open(path_logFile, FILE_APPEND);
+        if(!file_data || !file_log){
+            Display::showMessage("SD ERROR: OPEN FILE", Display::MESSAGE_ERROR);
+            status_sd = Display::STATUS_BAD;
+            delay(2000);
+        }
+
+        //everything went well
+        status_sd = Display::STATUS_OK;
+        setupOK = true;
+    }
+
+
+
+
+    void saveData(){
+        if(!setupOK) return;  
+        writeCSVLine(SD);
+    }
+}

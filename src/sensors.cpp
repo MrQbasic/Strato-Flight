@@ -18,8 +18,7 @@ namespace Sensors {
 
     bool init(){
         if(!ms8607.begin()){
-            Display::showMessage("IO ERROR: PRESSURE EXT", Display::MESSAGE_ERROR);
-            while(1);
+            Display::showMessage("I2C INIT ERROR: PRESSURE EXT", Display::MESSAGE_ERROR, true);
         }
         uv.begin(VEML6070_1_T);
 
@@ -33,8 +32,7 @@ namespace Sensors {
         Wire.endTransmission(false);
         Wire.requestFrom(LM75_ADDR, 2);
         if (Wire.available() < 2){
-            Display::showMessage("IO ERROR: TEMP EXT", Display::MESSAGE_ERROR);
-            while(1);
+            Display::showMessage("I2C ERROR: TEMP EXT", Display::MESSAGE_ERROR);
         }
         uint8_t msb = Wire.read();
         uint8_t lsb = Wire.read();
@@ -44,8 +42,7 @@ namespace Sensors {
         //read Pressure module
         sensors_event_t temp, pressure, humidity;
         if(!ms8607.getEvent(&pressure, &temp, &humidity)){
-            Display::showMessage("IO ERROR: PRESSURE EXT", Display::MESSAGE_ERROR);
-            while(1);
+            Display::showMessage("I2C ERROR: PRESSURE EXT", Display::MESSAGE_ERROR);
         }    
         data.temp_ext_C_2 = temp.temperature;
         data.pressure_ext  = pressure.pressure;
@@ -54,13 +51,9 @@ namespace Sensors {
         //read UV data
         uint16_t uv_index = uv.readUV();
         if(uv_index == 0xFFFF){
-            Display::showMessage("IO ERROR: UV", Display::MESSAGE_ERROR);
-            while(1);
+            Display::showMessage("I2C ERROR: UV", Display::MESSAGE_ERROR);
         }
         data.uv_index = uv_index / 15.0f;
-
-
-
     }
 
 }

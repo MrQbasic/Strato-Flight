@@ -6,6 +6,8 @@ namespace GPS
 {
     extern TinyGPSPlus GPS;
 
+    void init();
+
     void updateData();
 
 }
