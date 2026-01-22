@@ -38,8 +38,10 @@ void setup(){
 
 }
 
+int freq = 400;
 
 void loop(){
+
     GPS::updateData();
 
     Sensors::update();
