@@ -1,11 +1,12 @@
 #pragma once
+#include <SPI.h>
 
 namespace Storage {
 
     //returns storage space info in MB
     void getSpaceInfo(int *totalMB, int *usedMB);
     
-    void init();
+    void init_storage(SPIClass *spiSD);
 
     void saveData();
 

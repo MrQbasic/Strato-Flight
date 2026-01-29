@@ -8,14 +8,11 @@
 #include "display.hpp"
 
 
-#define PIN_SD_CS    5
-#define PIN_SD_MOSI 10
-#define PIN_SD_MISO 11
-#define PIN_SD_SCK   9
-
-SPIClass spiSD(HSPI);
+#define PIN_SD_SPI_CS    5
 
 bool setupOK = false;
+
+SPIClass *spiSD = NULL;
 
 enum Display::StatusBarLevel status_sd = Display::STATUS_HIDE;
 
@@ -75,7 +72,7 @@ void writeCSVLine(fs::SDFS &sd){
             Display::showMessage("SD ERROR: WRITE FAIL", Display::MESSAGE_ERROR);
         }
         DisplayError_data = false;
-        Storage::init(); //try to re-init SD
+        Storage::init_storage(spiSD); //try to re-init SD
         return;
     }
     DisplayError_data = true;
@@ -89,7 +86,7 @@ namespace Storage {
         if(!setupOK) return;
         if(!SD.exists(path_logFile)){
             Display::showMessage("SD ERROR: WRITE FAIL", Display::MESSAGE_ERROR);
-            Storage::init(); //try to re-init SD
+            Storage::init_storage(spiSD); //try to re-init SD
             DisplayError_log = false;
             return;
         }
@@ -104,14 +101,16 @@ namespace Storage {
     }
 
     bool firstInit = true;
-    void init(){
+    void init_storage(SPIClass *spi){
+        //store SPI instance for re-init if needed
+        spiSD = spi;
+
         //same routine is used for re-init after failure
         if(firstInit){
             Display::addStatusBar(&status_sd, "SD");
         }
-    
-        spiSD.begin(PIN_SD_SCK, PIN_SD_MISO, PIN_SD_MOSI, PIN_SD_CS);
-        if(!SD.begin(PIN_SD_CS, spiSD)){
+
+        if(!SD.begin(PIN_SD_SPI_CS, *spiSD)){
             status_sd = Display::STATUS_BAD;
             if(firstInit){
                 Display::showMessage("SPI ERROR: SD CARD", Display::MESSAGE_ERROR);

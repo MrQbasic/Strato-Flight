@@ -1,9 +1,8 @@
+#include <SPI.h>
+
 #define WIFI_SSID       "STRATO-FLIGHT"
-#define WIFI_PASSWORD   "stratobbsWittlich"
+#define WIFI_PASSWORD   "stratoflight"
 
-void setupWireless();
+void setupWireless(SPIClass *loraSPI);
 
-
-void sendLiveData(){
-
-}
+void sendLiveData();

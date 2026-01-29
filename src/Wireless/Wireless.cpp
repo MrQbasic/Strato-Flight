@@ -1,42 +1,47 @@
-/*
-
 #include "Wireless.hpp"
-#include <LoRa.h>
 
-// EU LoRa frequency (868.1 MHz)
-#define EU_FREQUENCY 868100000
+#include "Modules/Lora.hpp"
 
-void setupWireless() {
-    // Initialize LoRa with EU frequency and PA_BOOST
-    if (!LoRa.begin(EU_FREQUENCY, true)) {
-        // Handle initialization failure
-        while (1);
+#include "display.hpp"
+#include "sensors.hpp"
+
+#include <stddef.h>
+
+char* liveDataBuffer;
+int liveDataBufferLength = sizeof(Sensors::Data);
+
+void getLiveData(bool debug=false){
+    if(debug){
+        String msg = "{";
+        msg += "\"temp_ext_C\": " + String(Sensors::data.temp_ext_C) + ",";
+        msg += "\"temp_ext_C_2\": " + String(Sensors::data.temp_ext_C_2) + ",";
+        msg += "\"pressure_ext\": " +  String(Sensors::data.pressure_ext) + ",";
+        msg += "\"humidity_ext\": " +  String(Sensors::data.humidity_ext) + ",";
+        msg += "\"uv_index\": " +  String(Sensors::data.uv_index);
+        msg += "}";
+        size_t len = msg.length();
+        if(len > liveDataBufferLength){
+            free(liveDataBuffer);
+            liveDataBufferLength = len + 1;
+            liveDataBuffer = (char*) malloc(liveDataBufferLength);
+        }
+        msg.toCharArray(liveDataBuffer, len + 1);
+    }else{
+        //copy sensor data
+        memcpy(liveDataBuffer, &Sensors::data, sizeof(Sensors::Data));
     }
-
-    // Set spreading factor (default is 7, but for range, higher is better)
-    LoRa.setSpreadingFactor(10);
-
-    // Set signal bandwidth (125 kHz is common)
-    LoRa.setSignalBandwidth(125E3);
-
-    // Enable CRC
-    LoRa.enableCrc();
-
-    // Set sync word
-    LoRa.setSyncWord(0x34);
-
-    // Set TX power (14 dBm)
-    LoRa.setTxPower(14, RF_PACONFIG_PASELECT_PABOOST);
 }
+
+
+void setupWireless(SPIClass *loraSPI) {
+    wireless_lora_init(loraSPI);
+
+    liveDataBuffer = (char*) malloc(liveDataBufferLength);
+    Serial.println("Wireless buffer size: " + String(liveDataBufferLength));
+}
+
 
 void sendLiveData() {
-    // Example: Send a simple message
-    LoRa.beginPacket();
-    LoRa.print("Hello from Strato-Flight!");
-    LoRa.endPacket();
-
-    // Wait a bit before next send
-    delay(1000);
+    getLiveData(true);
+    wireless_lora_sendData(liveDataBuffer, liveDataBufferLength);
 }
-
-*/
