@@ -13,7 +13,13 @@
 #define PIN_SPI_MOSI   10
 #define PIN_SPI_MISO   11
 #define PIN_SPI_SCK    9
+
+#define PIN_SPI2_MOSI  17
+#define PIN_SPI2_MISO  7
+#define PIN_SPI2_SCK   6
+
 SPIClass spi(HSPI);
+SPIClass spi2(FSPI);
 
 //screen switching function
 bool shouldSwitchPage = true;
@@ -37,6 +43,7 @@ void setup(){
     attachInterrupt(digitalPinToInterrupt(PIN_USR), switchWindows, FALLING);
 
     spi.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI);
+    spi2.begin(PIN_SPI2_SCK, PIN_SPI2_MISO, PIN_SPI2_MOSI);
 
     Sensors::init();
 
@@ -45,7 +52,7 @@ void setup(){
 
     setupWireless(&spi);
     
-    Storage::init_storage(&spi);
+    Storage::init_storage(&spi2);
 
 }
 

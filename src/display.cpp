@@ -10,6 +10,7 @@
 #include "windows/light-Data.hpp"
 #include "windows/gps-Data.hpp"
 #include "windows/storage-Info.hpp"
+#include "windows/Wireless-Data.hpp"
 
 HT_st7735 st7735;
 
@@ -22,7 +23,7 @@ void Display::init(){
 std::vector<std::pair<enum Display::StatusBarLevel*, String>> statusBars;
 
 using windowRenderFunc = void(*)(HT_st7735);
-windowRenderFunc renderFunction[] = {render_gpsData_1, render_gpsData_2, render_airData, render_LightData, render_storageInfo};
+windowRenderFunc renderFunction[] = {render_gpsData_1, render_gpsData_2, render_airData, render_LightData, render_storageInfo, render_wireless_lora};
 
 int pageCount = sizeof(renderFunction)/sizeof(renderFunction[0]);
 
