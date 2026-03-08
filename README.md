@@ -5,6 +5,9 @@ Strato-Flight aims to replace a [commercial data logging module](https://www.str
 
 Unlike the commercial platform, which is closed-source and cannot be expanded or modified, Strato-Flight is fully customizable and designed for further development.
 
+There is also a fitting remote control system for it:
+[https://github.com/MrQbasic/Strato-Flight-Remote](https://github.com/MrQbasic/Strato-Flight-Remote)
+
 ## Hardware
 - [Heltec Wireless Tracker](https://heltec.org/project/wireless-tracker/)
 - SD card reader
