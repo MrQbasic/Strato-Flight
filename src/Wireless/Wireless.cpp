@@ -4,11 +4,12 @@
 
 #include "display.hpp"
 #include "sensors.hpp"
+#include "gps.hpp"
 
 #include <stddef.h>
 
 char* liveDataBuffer;
-int liveDataBufferLength = sizeof(Sensors::Data);
+int liveDataBufferLength = sizeof(Sensors::Data) + sizeof(double) * 3; //add some extra space for debug string
 
 void getLiveData(bool debug=false){
     if(debug){
@@ -29,6 +30,12 @@ void getLiveData(bool debug=false){
     }else{
         //copy sensor data
         memcpy(liveDataBuffer, &Sensors::data, sizeof(Sensors::Data));
+        
+        //copy gps data
+        double* liveDataBuffer_gps = (double*) (liveDataBuffer + sizeof(Sensors::Data));
+        liveDataBuffer_gps[0] = GPS::GPS.location.lat();
+        liveDataBuffer_gps[1] = GPS::GPS.location.lng();
+        liveDataBuffer_gps[2] = GPS::GPS.altitude.meters();
     }
 }
 
@@ -40,8 +47,12 @@ void setupWireless(SPIClass *loraSPI) {
     Serial.println("Wireless buffer size: " + String(liveDataBufferLength));
 }
 
+int lastSendTime = 0;
 
 void sendLiveData() {
-    getLiveData(true);
-    wireless_lora_sendData(liveDataBuffer, liveDataBufferLength);
+    if(millis() - lastSendTime > 3000 || millis() < lastSendTime){ //send data every second, also handle millis overflow
+        lastSendTime = millis();
+        getLiveData(false);
+        wireless_lora_sendData(liveDataBuffer, liveDataBufferLength);
+    }
 }

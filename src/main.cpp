@@ -36,7 +36,7 @@ void setup(){
     Display::init();
 
     //init I2C 
-    Wire.begin(45, 46);
+    Wire.begin(45, 4);
 
     //enable interrupt for the user button
     pinMode(PIN_USR, INPUT_PULLUP);

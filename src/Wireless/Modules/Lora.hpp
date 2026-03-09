@@ -3,9 +3,9 @@
 #include "display.hpp"
 
 #define LORA_RF_XTAL                                32000000
-#define LORA_RF_FREQUENCY                           868125000 // Hz
+#define LORA_RF_FREQUENCY                           868000000 // Hz
 #define LORA_TX_OUTPUT_POWER                        5        // dBm
-#define LORA_BANDWIDTH                              4        // [4: 125 kHz,
+#define LORA_BANDWIDTH                              5        // [4: 125 kHz,
                                                               //  5: 250 kHz,
                                                               //  6: 500 kHz,
 #define LORA_SPREADING_FACTOR                       7         // [SF5..SF12]

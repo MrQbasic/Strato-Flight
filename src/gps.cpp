@@ -11,7 +11,8 @@ namespace GPS {
         pinMode(PIN_VGNSS_CTRL, OUTPUT);
         digitalWrite(PIN_VGNSS_CTRL, HIGH);
         Serial1.begin(115200, SERIAL_8N1, 33, 34);
-
+        Serial1.println("");
+        Serial1.println("$CFGDYN,6,1*1D");
         Display::addStatusBar(&status_gps, "GPS");
     }
 
