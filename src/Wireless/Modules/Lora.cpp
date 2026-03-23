@@ -154,7 +154,7 @@ bool wireless_lora_init(SPIClass *spi){
     buf[0] = LORA_SPREADING_FACTOR; //Spreading Factor
     buf[1] = LORA_BANDWIDTH;
     buf[2] = LORA_CODINGRATE;       //Coding Rate
-    buf[3] = 0x00;                  //Low Data Rate Optimize OFF LDRO
+    buf[3] = 0x01;                  //Low Data Rate Optimize ON LDRO
     wireless_lora_sendCommand(LORA_CMD_SET_MODULATION_PARAM, buf, 4);
 
     return false;
