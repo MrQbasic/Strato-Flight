@@ -28,9 +28,9 @@ Sensor_Data sensor_data;
 bool handle_I2C_Error(esp_err_t err){
     if(err != ESP_OK){
         printf("I2C ERROR: %d\n", err);
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 
 bool sensors_init(){
@@ -45,7 +45,11 @@ bool sensors_init(){
         .master.clk_speed = 100000
     };
     err |= handle_I2C_Error(i2c_param_config(I2C_NUM_0, &i2c_config));
-    err |= i2c_driver_install(I2C_NUM_0, i2c_config.mode, 0, 0, 0);
+    err |= handle_I2C_Error(i2c_driver_install(I2C_NUM_0, i2c_config.mode, 0, 0, 0));
+    if(err){
+        printf("Failed to initialize I2C\n");
+        return false;
+    }
 
     MS8607_init(I2C_NUM_0);
 
@@ -58,34 +62,47 @@ bool sensors_init(){
 }
 
 void sensors_update(){
-    /*
-    //read Temp data from module
-    Wire.beginTransmission(LM75_ADDR);
-    Wire.write(0x00);   // temperature register
-    Wire.endTransmission(false);
-    Wire.requestFrom(LM75_ADDR, 2);
-    if (Wire.available() < 2){
-        Display::showMessage("I2C ERROR: TEMP EXT", Display::MESSAGE_ERROR);
-    }
-    uint8_t msb = Wire.read();
-    uint8_t lsb = Wire.read();
-    int16_t raw = ((msb << 8) | lsb) >> 7;  
-    data.temp_ext_C = raw * 0.5f;
-    
-    //read Pressure module
-    sensors_event_t temp, pressure, humidity;
-    if(!ms8607.getEvent(&pressure, &temp, &humidity)){
-        Display::showMessage("I2C ERROR: PRESSURE EXT", Display::MESSAGE_ERROR);
-    }    
-    data.temp_ext_C_2 = temp.temperature;
-    data.pressure_ext  = pressure.pressure;
-    data.humidity_ext  = humidity.relative_humidity;
+    while(1){
+        MS8607_read(&(sensor_data.temp_ext_C), &(sensor_data.pressure_ext), &(sensor_data.humidity_ext));
+        /*
+        //read Temp data from module
+        Wire.beginTransmission(LM75_ADDR);
+        Wire.write(0x00);   // temperature register
+        Wire.endTransmission(false);
+        Wire.requestFrom(LM75_ADDR, 2);
+        if (Wire.available() < 2){
+            Display::showMessage("I2C ERROR: TEMP EXT", Display::MESSAGE_ERROR);
+        }
+        uint8_t msb = Wire.read();
+        uint8_t lsb = Wire.read();
+        int16_t raw = ((msb << 8) | lsb) >> 7;  
+        data.temp_ext_C = raw * 0.5f;
+        
+        //read Pressure module
+        sensors_event_t temp, pressure, humidity;
+        if(!ms8607.getEvent(&pressure, &temp, &humidity)){
+            Display::showMessage("I2C ERROR: PRESSURE EXT", Display::MESSAGE_ERROR);
+        }    
+        data.temp_ext_C_2 = temp.temperature;
+        data.pressure_ext  = pressure.pressure;
+        data.humidity_ext  = humidity.relative_humidity;
 
-    //read UV data
-    uint16_t uv_index = uv.readUV();
-    if(uv_index == 0xFFFF){
-        Display::showMessage("I2C ERROR: UV", Display::MESSAGE_ERROR);
+        //read UV data
+        uint16_t uv_index = uv.readUV();
+        if(uv_index == 0xFFFF){
+            Display::showMessage("I2C ERROR: UV", Display::MESSAGE_ERROR);
+        }
+        data.uv_index = uv_index / 15.0f;
+        */
+
+        printf("%.2f %.2f %.2f\n", sensor_data.temp_ext_C, sensor_data.humidity_ext, sensor_data.pressure_ext);
+
+        vTaskDelay(pdMS_TO_TICKS(SENSORS_UPDATE_INTERVAL_MS));
     }
-    data.uv_index = uv_index / 15.0f;
-    */
+}
+
+
+
+void sensors_start(){
+    xTaskCreate(sensors_update, "sensor_update", 2048, NULL, 3, NULL);
 }

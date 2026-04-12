@@ -6,8 +6,12 @@
 #include "sensors.h"
 
 void app_main(void){
+    vTaskDelay(pdMS_TO_TICKS(5000)); //wait for sensor to power up
+    printf("Starting main task\n");
 
     sensors_init();
+    //TODO: error Handling
+    sensors_start();
 
     char stats_buffer[1024];
     while(1) {
