@@ -5,6 +5,7 @@
 
 #include "sensors/MS8607.h"
 #include "sensors/LM75.h"
+#include "sensors/VEML6070.h"
 
 #include <stdio.h>
 
@@ -51,33 +52,30 @@ bool sensors_init(){
         return false;
     }
 
-    MS8607_init(SENSORS_I2C_PORT);
+    err |= MS8607_init(SENSORS_I2C_PORT);
 
-    /*if(!ms8607.begin()){
-        Display::showMessage("I2C INIT ERROR: PRESSURE EXT", Display::MESSAGE_ERROR, true);
-    }
-    uv.begin(VEML6070_1_T);
-    */
+    err |= VEML6070_init(SENSORS_I2C_PORT);
+
     return err;
 }
 
 void sensors_update(){
     while(1){
+        //vTaskDelay(pdMS_TO_TICKS(SENSORS_UPDATE_INTERVAL_MS));
+
         MS8607_read(&(sensor_data.temp_ext_C), &(sensor_data.pressure_ext), &(sensor_data.humidity_ext));
-        LM75_getTemp(SENSORS_I2C_PORT, &(sensor_data.temp_ext_C_2));
-
-        /*
-        //read UV data
-        uint16_t uv_index = uv.readUV();
-        if(uv_index == 0xFFFF){
-            Display::showMessage("I2C ERROR: UV", Display::MESSAGE_ERROR);
+        
+        if(LM75_getTemp(SENSORS_I2C_PORT, &(sensor_data.temp_ext_C_2))){
+            printf("ERROR: sensor: LM75\n");
+            continue;
         }
-        data.uv_index = uv_index / 15.0f;
-        */
 
-        printf("%.2f %.2f %.2f %.2f\n", sensor_data.temp_ext_C, sensor_data.temp_ext_C_2, sensor_data.humidity_ext, sensor_data.pressure_ext);
+        if(VEML6070_readUV(&(sensor_data.uv_index))){
+            printf("ERROR: sensor: VEML6070\n");
+            continue;
+        }
 
-        vTaskDelay(pdMS_TO_TICKS(SENSORS_UPDATE_INTERVAL_MS));
+        printf("%.2f %.2f %.2f %.2f %.2f\n", sensor_data.temp_ext_C, sensor_data.temp_ext_C_2, sensor_data.humidity_ext, sensor_data.pressure_ext, sensor_data.uv_index);
     }
 }
 
