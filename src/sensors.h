@@ -1,11 +1,14 @@
 #pragma once
 #include <stdbool.h>
+#include "driver/i2c.h"
 
 #define SENSORS_UPDATE_INTERVAL_MS 1000
 
 //I2C pins
 #define SENSORS_I2C_SDA 45
 #define SENSORS_I2C_SCL 4
+
+#define SENSORS_I2C_PORT I2C_NUM_0
 
 typedef struct Sensor_Data{
     float temp_ext_C;
