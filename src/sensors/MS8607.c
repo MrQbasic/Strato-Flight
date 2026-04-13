@@ -66,18 +66,18 @@ bool MS8607_init(i2c_port_t i2c_port){
 bool MS8607_read(float* temp_C, float* pressure_hPa, float* humidity_percent){
     //get pressure data
     uint8_t pressure_data[3] = {0};
-    i2c_master_write_to_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, MS8607_I2C_P_T_CMD_CONVERT_D1_OSR_8192, 1, pdMS_TO_TICKS(100));
+    if(i2c_master_write_to_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, MS8607_I2C_P_T_CMD_CONVERT_D1_OSR_8192, 1, pdMS_TO_TICKS(100)) != ESP_OK) return true;
     vTaskDelay(pdMS_TO_TICKS(30));
-    i2c_master_write_to_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, MS8607_I2C_P_T_CMD_ADC_READ, 1, pdMS_TO_TICKS(100));
-    i2c_master_read_from_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, pressure_data, 3, pdMS_TO_TICKS(100));
+    if(i2c_master_write_to_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, MS8607_I2C_P_T_CMD_ADC_READ, 1, pdMS_TO_TICKS(100)) != ESP_OK) return true;
+    if(i2c_master_read_from_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, pressure_data, 3, pdMS_TO_TICKS(100)) != ESP_OK) return true;
     uint32_t pressure_raw = (pressure_data[0] << 16) | (pressure_data[1] << 8) | pressure_data[2]; 
 
     //get temp data
     uint8_t temp_data[3] = {0};
-    i2c_master_write_to_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, MS8607_I2C_P_T_CMD_CONVERT_D2_OSR_8192, 1, pdMS_TO_TICKS(100));
+    if(i2c_master_write_to_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, MS8607_I2C_P_T_CMD_CONVERT_D2_OSR_8192, 1, pdMS_TO_TICKS(100)) != ESP_OK) return true;
     vTaskDelay(pdMS_TO_TICKS(30));
-    i2c_master_write_to_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, MS8607_I2C_P_T_CMD_ADC_READ, 1, pdMS_TO_TICKS(100));
-    i2c_master_read_from_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, temp_data, 3, pdMS_TO_TICKS(100));
+    if(i2c_master_write_to_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, MS8607_I2C_P_T_CMD_ADC_READ, 1, pdMS_TO_TICKS(100)) != ESP_OK) return true;
+    if(i2c_master_read_from_device(MS8607_i2c_port, MS8607_I2C_ADDR_P_T, temp_data, 3, pdMS_TO_TICKS(100)) != ESP_OK) return true;
     uint32_t temp_raw = (temp_data[0] << 16) | (temp_data[1] << 8) | temp_data[2]; 
 
     //calc temp
@@ -116,12 +116,12 @@ bool MS8607_read(float* temp_C, float* pressure_hPa, float* humidity_percent){
 
     //read humidty
     uint8_t humidity_data[2];
-    i2c_master_write_read_device(MS8607_i2c_port, MS8607_I2C_ADDR_HUMIDITY, MS8607_I2C_HUMIDITY_CMD_MEASURE_HOLD, 1, humidity_data, 2, pdMS_TO_TICKS(100));
+    if(i2c_master_write_read_device(MS8607_i2c_port, MS8607_I2C_ADDR_HUMIDITY, MS8607_I2C_HUMIDITY_CMD_MEASURE_HOLD, 1, humidity_data, 2, pdMS_TO_TICKS(100)) != ESP_OK) return true;
     uint16_t humidity_raw = (humidity_data[0] << 8) | (humidity_data[1] & 0xFC);
 
     //apply compensation
     float RH = -6.0f + 125.0f * ((float)humidity_raw / (float)(1<<16));
     *humidity_percent = RH + (20.0f - *temp_C) * (-0.18f);
 
-    return true;
+    return false;
 }

@@ -61,18 +61,18 @@ bool sensors_init(){
 
 void sensors_update(){
     while(1){
-        //vTaskDelay(pdMS_TO_TICKS(SENSORS_UPDATE_INTERVAL_MS));
+        vTaskDelay(pdMS_TO_TICKS(SENSORS_UPDATE_INTERVAL_MS));
 
-        MS8607_read(&(sensor_data.temp_ext_C), &(sensor_data.pressure_ext), &(sensor_data.humidity_ext));
+        if(MS8607_read(&(sensor_data.temp_ext_C), &(sensor_data.pressure_ext), &(sensor_data.humidity_ext))){
+            printf("ERROR: sensor: MS8607\n");
+        }
         
         if(LM75_getTemp(SENSORS_I2C_PORT, &(sensor_data.temp_ext_C_2))){
             printf("ERROR: sensor: LM75\n");
-            continue;
         }
 
         if(VEML6070_readUV(&(sensor_data.uv_index))){
             printf("ERROR: sensor: VEML6070\n");
-            continue;
         }
 
         printf("%.2f %.2f %.2f %.2f %.2f\n", sensor_data.temp_ext_C, sensor_data.temp_ext_C_2, sensor_data.humidity_ext, sensor_data.pressure_ext, sensor_data.uv_index);
