@@ -1,7 +1,11 @@
 #include "Lora.hpp"
+#include "display.hpp"
 
 SPISettings lora_spi_Settings(8000000, MSBFIRST, SPI_MODE0);
 SPIClass    *loraSPI = NULL;
+
+
+
 
 void wireless_lora_wait(){
     while(digitalRead(LORA_SPI_BUSY_PIN) == HIGH){
@@ -56,12 +60,14 @@ void wireless_lora_writeBuffer(uint8_t offset, uint8_t* data, uint8_t length){
     loraSPI->endTransaction();
 }
 
+
 void wireless_lora_readBuffer(uint8_t offset, uint8_t* data, uint8_t length){
     wireless_lora_wait();
     loraSPI->beginTransaction(lora_spi_Settings);
     digitalWrite(LORA_SPI_NSS_PIN, LOW);
     loraSPI->transfer(LORA_CMD_READ_BUFFER);
     loraSPI->transfer(offset);
+    loraSPI->transfer(0x00);
     for(int i=0; i<length; i++){
         data[i] = loraSPI->transfer(0x00);
     }
@@ -116,17 +122,13 @@ bool wireless_lora_init(SPIClass *spi){
     //set regulator mode
     buf[0] = 0x01; //LDO
     wireless_lora_sendCommand(LORA_CMD_SET_REGULATOR_MODE, buf, 1);
-    //set buffer base address
-    buf[0] = 0x00; //Tx base addr
-    buf[1] = 0x00; //Rx base addr
-    wireless_lora_sendCommand(LORA_CMD_SET_BUFFER_BASE_ADDRESS, buf, 2);
     //set packet type
     buf[0] = 0x01; //Packet type LoRa
     wireless_lora_sendCommand(LORA_CMD_SET_PACKETTYPE, buf, 1);
     //set PA config
     buf[0] = 0x04; //PA duty cycle
     buf[1] = 0x07; //HP max
-    buf[2] = 0x00; //devive select: SX1262
+    buf[2] = 0x00; //device select: SX1262
     buf[3] = 0x01; //PALUT
     wireless_lora_sendCommand(LORA_CMD_SET_PA_CONFIG, buf, 4);
     //set OCP
@@ -178,8 +180,12 @@ void wireless_lora_printStatus(){
     Serial.println(buf[0], HEX);
 }
 
-bool wireless_lora_sendData(char* data, int length){
+bool wireless_lora_txData(char* data, int length){
+    //set buffer base address
     uint8_t buf[6];
+    buf[0] = 0x00; //Tx base addr
+    buf[1] = 0x00; //Rx base addr
+    wireless_lora_sendCommand(LORA_CMD_SET_BUFFER_BASE_ADDRESS, buf, 2);
     //set packet params
     buf[0] = LORA_PREAMBLE_LENGTH >> 8;
     buf[1] = LORA_PREAMBLE_LENGTH & 0xFF;
@@ -195,5 +201,48 @@ bool wireless_lora_sendData(char* data, int length){
     buf[1] = 0x00;
     buf[2] = 0x00;
     wireless_lora_sendCommand(LORA_CMD_SET_TX, buf, 3);
+    return false;
+}
+
+bool wireless_lora_rxData(uint8_t* data, int max_length){
+
+    //set buffer base address
+    uint8_t buf[2];
+    buf[0] = 0x00; //Tx base addr
+    buf[1] = 0x00; //Rx base addr
+    wireless_lora_sendCommand(LORA_CMD_SET_BUFFER_BASE_ADDRESS, buf, 2);
+
+    //rx
+    int timeout_ms = 2000;
+    uint32_t timeout_units = (timeout_ms == 0) ? 0xFFFFFF : (timeout_ms * 1000 * 1000 / 15625);
+    uint8_t arg_timeout[] = {
+        (timeout_units >> 16) & 0xFF,
+        (timeout_units >> 8)  & 0xFF,
+        (timeout_units)       & 0xFF
+    };
+    wireless_lora_sendCommand(0x82, arg_timeout, 3);
+
+    //wait for the timeout
+    vTaskDelay(pdMS_TO_TICKS(3000));
+
+    //check the status
+    uint8_t status;
+    wireless_lora_readCommand(0xC0, &status, 1);
+
+    //check if we got a packet
+    if(((status & 0b00001110) >> 1) == 0x2){
+        //check the buffer position
+        uint8_t buffer_status[3];
+        wireless_lora_readCommand(0x13, buffer_status, 3);
+        uint8_t len = buffer_status[1];
+        uint8_t ptr = buffer_status[2];
+        //read the buffer
+        if(max_length < len) return true;
+        
+        wireless_lora_readBuffer(ptr, data, len);
+    }else{
+        return true;
+    }
+
     return false;
 }

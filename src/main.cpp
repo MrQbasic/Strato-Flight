@@ -54,6 +54,7 @@ void setup(){
     
     Storage::init_storage(&spi2);
 
+    Serial.println("Init Done!\n");
 }
 
 int freq = 400;

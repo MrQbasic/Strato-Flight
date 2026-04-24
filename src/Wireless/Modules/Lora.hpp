@@ -51,4 +51,6 @@
 
 bool wireless_lora_init(SPIClass *spi);
 
-bool wireless_lora_sendData(char* data, int length);
+bool wireless_lora_txData(char* data, int length);
+
+bool wireless_lora_rxData(uint8_t* data, int max_length);
