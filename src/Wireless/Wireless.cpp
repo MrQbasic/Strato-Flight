@@ -79,7 +79,7 @@ void sendLiveData() {
         packetID++;
         
         wireless_lora_txData(liveDataBuffer, liveDataBufferLength);
-        vTaskDelay(pdMS_TO_TICKS(500)); // delay to let the module tx properly
+        vTaskDelay(pdMS_TO_TICKS(1000)); // delay to let the module tx properly
 
         if(!wireless_lora_rxData((uint8_t*) &response, sizeof(response))){
             if(response.packet_id == (packetID-1)){

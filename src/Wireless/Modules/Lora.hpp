@@ -8,10 +8,10 @@
 #define LORA_BANDWIDTH                              4        // [4: 125 kHz,
                                                               //  5: 250 kHz,
                                                               //  6: 500 kHz,
-#define LORA_SPREADING_FACTOR                       7         // [SF5..SF12]
-#define LORA_CODINGRATE                             4         // [1: 4/5,
-                                                              //  2: 4/6,
-                                                              //  3: 4/7,
+#define LORA_SPREADING_FACTOR                       9         // [SF5..SF12]
+#define LORA_CODINGRATE                             7         // [1: 4/5,   5: 4/5_LI
+                                                              //  2: 4/6,   6: 4/6_LI
+                                                              //  3: 4/7,   7: 4/8_LI
                                                               //  4: 4/8]
 #define LORA_PREAMBLE_LENGTH                        8         // Same for Tx and Rx
 #define LORA_SYMBOL_TIMEOUT                         0         // Symbols
