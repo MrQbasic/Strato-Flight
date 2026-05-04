@@ -3,6 +3,7 @@
 #include "gps.hpp"
 #include "storage.hpp"
 #include "Wireless/Wireless.hpp"
+#include "buzzer.hpp"
 
 #include <Wire.h>
 
@@ -53,6 +54,8 @@ void setup(){
     setupWireless(&spi);
     
     Storage::init_storage(&spi2);
+
+    buzzer_init();
 
     Serial.println("Init Done!\n");
 }

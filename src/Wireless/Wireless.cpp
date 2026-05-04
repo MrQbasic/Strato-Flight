@@ -2,6 +2,7 @@
 
 #include "Modules/Lora.hpp"
 
+#include "buzzer.hpp"
 #include "display.hpp"
 #include "sensors.hpp"
 #include "gps.hpp"
@@ -83,11 +84,36 @@ void sendLiveData() {
 
         if(!wireless_lora_rxData((uint8_t*) &response, sizeof(response))){
             if(response.packet_id == (packetID-1)){
-                lastPacketStatus = 0;
+                //check if the response data is ok
+                if((response.command == response.command_repeat) && (response.arg == response.arg_repeat)){
+                    //set status
+                    status_lora = Display::STATUS_OK;
+                    lastPacketStatus = 0;
 
-                status_lora = Display::STATUS_OK;
+                    //eval command
+                    switch(response.command){
+                        //NOP
+                        case 0x00:
+                            break;
 
-                //ToDo handle commands!
+                        //buzzer command
+                        case 0x01:
+                            if(response.arg == 1){
+                                buzzer_enable();
+                            }else{
+                                buzzer_disable();
+                            }
+                            break;
+                        
+                        //invalid command
+                        default:
+                            Display::showMessage("Invalid Command!", Display::MESSAGE_WARN);
+                    }
+                }else{
+                    //the command is corrupt
+                    status_lora = Display::STATUS_MID;
+                    lastPacketStatus = -1;
+                }
             }else{
                 status_lora = Display::STATUS_MID;
                 lastPacketStatus = -1;
